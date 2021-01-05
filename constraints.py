@@ -21,10 +21,11 @@ class GenderConstraint(Constraint):
             # only one gender
             return True, []
         
-        elif gender_counter == 2:
-            least_common_gender, _ = gender_counter.most_common[-1]
-            return [Reduce(capsule_index, room) for room in rooms if room.gender == least_common_gender]
+        elif len(gender_counter) == 2:
+            least_common_gender, _ = gender_counter.most_common()[-1]
+            return False, [Reduce(capsule_index, room) for room in rooms if room.gender == least_common_gender]
         
+        raise ValueError(f'Cannot have {len(gender_counter)} genders.')
 
 class RoomCountConstraint(Constraint):
     order = 30
@@ -42,7 +43,6 @@ class RoomCountConstraint(Constraint):
             to_reduce = self.max_room_count - len(rooms)
             state = [Reduce(capsule_index, room) for room in rooms[:to_reduce]]
         return valid, state
-        
 
 class ConnectingConstraint(Constraint):
     order = 10
@@ -69,7 +69,7 @@ class Action:
 class Reduce(Action):
     def do(self, capsules, room_mapping):
         capsules[self.capsule_index].remove(self.room)
-        room_mapping[room] = None
+        room_mapping[self.room] = None
 
 class Add(Action):
     def do(self, capsules, room_mapping):

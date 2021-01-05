@@ -101,9 +101,11 @@ class CapsulesManager:
         need_fixing = False
         for capsule in self.capsules.values():
             is_valid, actions = capsule.apply_constraints(self.global_constraints)
+            print(is_valid, actions)
             if not is_valid:
                 need_fixing = True
                 for action in actions:
+                    print(action)
                     self.commit_action(action)
         return need_fixing
     
