@@ -67,11 +67,9 @@ class Action:
         self.room = room
 
 class Reduce(Action):
-    def do(self, capsules, room_mapping):
-        capsules[self.capsule_index].remove(self.room)
+    def do(self, room_mapping):
         room_mapping[self.room] = None
 
 class Add(Action):
-    def do(self, capsules, room_mapping):
-        capsules[self.capsule_index].add(self.room)
+    def do(self,room_mapping):
         room_mapping[self.room] = self.capsule_index

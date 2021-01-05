@@ -1,18 +1,19 @@
 import random
 
 class Capsule:
-    def __init__(self, index, rooms):
+    def __init__(self, index, rooms=None):
         self.index = index
-        self.rooms = rooms
-        self.constraints = [c for room in rooms
-                              for c in room.constraints]
+        self.rooms = rooms if rooms else []
+        self._update_constraints()
     
-    def add(self, room):
-        self.rooms.append(room)
-        self.constraints += room.constraints
+    def update(self, room_mapping):
+        for room, capsule_index in room_mapping.items():
+            if self.index == capsule_index:
+                self.rooms.append(room)
+
+        self._update_constraints()
     
-    def remove(self, room):
-        self.rooms.remove(room)
+    def _update_constraints(self):
         self.constraints = [c for room in self.rooms
                               for c in room.constraints]
 
@@ -59,11 +60,13 @@ class CapsulesManager:
         shuffled_rooms = list(self.rooms)
         random.shuffle(shuffled_rooms)
         factor = len(shuffled_rooms) // self.capsules_count
+
         for capsule_index in range(self.capsules_count):
             for room_index in shuffled_rooms[capsule_index * factor: (capsule_index + 1) * factor]:
                 room = self.rooms[room_index]
                 self.room_mapping[room] = capsule_index
                 print(f'Randomly allocating room {room.index} to capsule {capsule_index}')
+        
         for room_index in shuffled_rooms[factor * self.capsules_count:]:
             room = self.rooms[room_index]
             for capsule_index in range(self.capsules_count):
@@ -80,12 +83,10 @@ class CapsulesManager:
         self.capsules = {}
 
         for current_capsule_index in range(self.capsules_count):
-            capsule_rooms = []
-            for room, capsule_index in self.room_mapping.items():
-                if current_capsule_index == capsule_index:
-                    capsule_rooms.append(room)
-            self.capsules[current_capsule_index] = Capsule(current_capsule_index, capsule_rooms)
-        
+            current_capsule = Capsule(current_capsule_index)
+            current_capsule.update(self.room_mapping)
+            self.capsules[current_capsule_index] = current_capsule
+            
         for fix_count in range(CapsulesManager.max_fixes_count):
             print(f'Attempting to fix capsules, ({fix_count+1}/{CapsulesManager.max_fixes_count})')
             needed_fixing = self.fix_capsules()
@@ -110,7 +111,14 @@ class CapsulesManager:
         return need_fixing
     
     def commit_action(self, action):
-        action.do(self.capsules, self.room_mapping)
+        # The action only influence room_mapping,
+        # therefore we must update the capsules
+        action.do(self.room_mapping)
+        self.update_capsules()
+    
+    def update_capsules(self):
+        for capsule in self.capsules.values():
+            capsule.update(self.room_mapping)
     
     def print_capsules(self):
         print(self.room_mapping)
