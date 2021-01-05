@@ -1,5 +1,7 @@
 from collections import Counter
 
+from common import shuffle_list
+
 class Constraint:
     def is_valid(self, capsule_index, rooms):
         """
@@ -28,20 +30,22 @@ class GenderConstraint(Constraint):
         raise ValueError(f'Cannot have {len(gender_counter)} genders.')
 
 class RoomCountConstraint(Constraint):
-    order = 30
-
     def __init__(self, max_room_count):
         self.max_room_count = max_room_count
     
     def __str__(self):
         return f"{self.__class__.__name__}({self.max_room_count})"
     
+    @property
+    def order(self):
+        return (self.max_room_count - 2) * 8
+
     def is_valid(self, capsule_index, rooms):
-        valid = (len(rooms) < self.max_room_count)
+        valid = (len(rooms) <= self.max_room_count)
         state = []
         if not valid:
-            to_reduce = self.max_room_count - len(rooms)
-            state = [Reduce(capsule_index, room) for room in rooms[:to_reduce]]
+            to_reduce = len(rooms) - self.max_room_count
+            state = [Reduce(capsule_index, room) for room in shuffle_list(rooms)[:to_reduce]]
         return valid, state
 
 class ConnectingConstraint(Constraint):
@@ -65,6 +69,9 @@ class Action:
     def __init__(self, capsule_index, room):
         self.capsule_index = capsule_index
         self.room = room
+    
+    def __str__(self):
+        return f'{self.__class__.__name__}(Capsule={self.capsule_index}, Room={self.room.index})'
 
 class Reduce(Action):
     def do(self, room_mapping):

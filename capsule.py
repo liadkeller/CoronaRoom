@@ -1,4 +1,4 @@
-import random
+from common import shuffle_list
 
 class Capsule:
     def __init__(self, index, rooms=None):
@@ -7,10 +7,8 @@ class Capsule:
         self._update_constraints()
     
     def update(self, room_mapping):
-        for room, capsule_index in room_mapping.items():
-            if self.index == capsule_index:
-                self.rooms.append(room)
-
+        self.rooms = [room for room, capsule_index in room_mapping.items()
+                           if self.index == capsule_index]
         self._update_constraints()
     
     def _update_constraints(self):
@@ -19,31 +17,26 @@ class Capsule:
 
     def apply_constraints(self, global_constraints):
         self.constraints += global_constraints
-
-        for constraint in self.constraints:
-            self._valid, self._state = self._is_valid()
-            if not self._valid:
-                return self._valid, self._state
-
-        return self._valid, self._state
+        return self._is_valid()
     
     def _is_valid(self):
         ordered_constraints = sorted(self.constraints, key=lambda c: c.order)
         for constraint in ordered_constraints:
             valid, state = constraint.is_valid(self.index, self.rooms)
             if not valid:
+                print(valid, [str(a) for a in state], constraint)
                 return valid, state
         return True, []
 
 class CapsulesManager:
     max_tries_count = 20
-    max_fixes_count = 20
+    max_fixes_count = 2000
 
     def __init__(self, rooms, capsules_count, global_constraints):
         self.global_constraints = global_constraints
 
         self.rooms = rooms
-        self.room_mapping = {room: None for room in self.rooms}
+        self.room_mapping = {room: None for room in self.rooms.values()}
 
         self.capsules_count = capsules_count
 
@@ -57,21 +50,36 @@ class CapsulesManager:
         raise RuntimeError("Reached maximum try attempts")
 
     def randomize_room_mapping(self):
-        shuffled_rooms = list(self.rooms)
-        random.shuffle(shuffled_rooms)
+        self.allocate_rooms_randomly(self.rooms.keys())
+    
+    def allocate_rooms_randomly(self, room_indices):
+        """
+        Randomly allocates the given rooms to capsules
+        
+        Notice: This function changes self.room_mapping only
+        self.capsules might not be defined at the time this functions is called
+        """
+        print(f'Called allocate_rooms_randomly({room_indices})')
+        shuffled_rooms = shuffle_list(room_indices)
+        shuffled_capsules = shuffle_list(range(self.capsules_count))
+
         factor = len(shuffled_rooms) // self.capsules_count
 
-        for capsule_index in range(self.capsules_count):
+        # Allocates each section of the array to different capsule
+        # Iterating the capsules in an ascending order while iterating the rooms in a random order
+        for capsule_index in shuffled_capsules:
             for room_index in shuffled_rooms[capsule_index * factor: (capsule_index + 1) * factor]:
                 room = self.rooms[room_index]
                 self.room_mapping[room] = capsule_index
                 print(f'Randomly allocating room {room.index} to capsule {capsule_index}')
         
-        for room_index in shuffled_rooms[factor * self.capsules_count:]:
+        shuffled_capsules = shuffle_list(shuffled_capsules)
+        # Allocates the remainder of the rooms array, one by one to another capsule
+        # Notice: the list which is enumerated must be smaller then self.capsules_count or error will occur
+        for capsule_index, room_index in zip(shuffled_capsules, shuffled_rooms[factor * self.capsules_count:]):
             room = self.rooms[room_index]
-            for capsule_index in range(self.capsules_count):
-                self.room_mapping[room] = capsule_index
-                print(f'Randomly allocating room {room.index} to capsule {capsule_index}')
+            self.room_mapping[room] = capsule_index
+            print(f'Randomly allocating room {room.index} to capsule {capsule_index}')
 
     def build_capsules(self):
         """
@@ -99,15 +107,24 @@ class CapsulesManager:
     def fix_capsules(self):
         '''
         Apply global constaints and try to fix invalid capsules
-        Return voolean if needef fixing
+        Return boolean if needed fixing
         '''
         need_fixing = False
-        for capsule in self.capsules.values():
+        for capsule in shuffle_list(self.capsules.values()):
+            self.print_capsules()
             is_valid, actions = capsule.apply_constraints(self.global_constraints)
             if not is_valid:
                 need_fixing = True
                 for action in actions:
                     self.commit_action(action)
+                break
+        
+        orphan_rooms = [room.index for room, capsule in self.room_mapping.items() if capsule is None]
+        if len(orphan_rooms) > 0:
+            self.allocate_rooms_randomly(orphan_rooms)
+            self.update_capsules()
+            need_fixing = True
+
         return need_fixing
     
     def commit_action(self, action):
@@ -121,4 +138,7 @@ class CapsulesManager:
             capsule.update(self.room_mapping)
     
     def print_capsules(self):
-        print(self.room_mapping)
+        print([[room.index for room in capsule.rooms] for capsule in self.capsules.values()])
+
+    def print_room_mapping(self):
+        print({room.index: capsule for room, capsule in self.room_mapping.items()})
