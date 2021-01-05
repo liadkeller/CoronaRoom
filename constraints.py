@@ -11,7 +11,7 @@ class Constraint:
         """
         raise NotImplementedError()
     
-    def __str__(self):
+    def __repr__(self):
         return f"{self.__class__.__name__}"
 
 class GenderConstraint(Constraint):
@@ -33,7 +33,7 @@ class RoomCountConstraint(Constraint):
     def __init__(self, max_room_count):
         self.max_room_count = max_room_count
     
-    def __str__(self):
+    def __repr__(self):
         return f"{self.__class__.__name__}({self.max_room_count})"
     
     @property
@@ -54,7 +54,7 @@ class ConnectingConstraint(Constraint):
         self.room1 = room1
         self.room2 = room2
 
-    def __str__(self):
+    def __repr__(self):
         return f"{self.__class__.__name__}({self.room1.index}, {self.room2.index})"
 
     def is_valid(self, capsule_index, rooms):
@@ -70,7 +70,7 @@ class Action:
         self.capsule_index = capsule_index
         self.room = room
     
-    def __str__(self):
+    def __repr__(self):
         return f'{self.__class__.__name__}(Capsule={self.capsule_index}, Room={self.room.index})'
 
 class Reduce(Action):

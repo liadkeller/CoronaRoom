@@ -8,9 +8,9 @@ class Room:
         self.count = len(roomates)
         self.constraints = []
 
-    def __str__(self):
-        return str((self.index, self.roomates, self.gender, self.count,
-                    [str(c) for c in self.constraints]))
+    def __repr__(self):
+        return repr((self.index, self.roomates, self.gender, self.count,
+                    [c for c in self.constraints]))
 
 class Gender(Enum):
     Female = 0
