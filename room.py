@@ -46,7 +46,8 @@ def build_rooms(roomates_dict: dict, gender_dict: dict, assume_gender):
             # if roomate gender appears in gender_dict, set it as the room gender
             # Notice: Wrong gender of the first roomate will turn the entire room to the wrong gender
             room_gender = gender_dict.get(roomate, None)
-            if room_gender:
+            if room_gender is not None:
+                room_gender = Gender(room_gender)
                 break
         
         if room_gender is None:
