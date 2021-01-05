@@ -47,6 +47,7 @@ class CapsulesManager:
         self.capsules_count = capsules_count
 
         for try_count in range(CapsulesManager.max_tries_count):
+            print(f'\nStart building capsules, attempt {try_count+1}/{CapsulesManager.max_tries_count}')
             succeded = self.build_capsules()
             if succeded:
                 self.print_capsules()
@@ -86,6 +87,7 @@ class CapsulesManager:
             self.capsules[current_capsule_index] = Capsule(current_capsule_index, capsule_rooms)
         
         for fix_count in range(CapsulesManager.max_fixes_count):
+            print(f'Attempting to fix capsules, ({fix_count+1}/{CapsulesManager.max_fixes_count})')
             needed_fixing = self.fix_capsules()
             if not needed_fixing:
                 return True
@@ -101,11 +103,9 @@ class CapsulesManager:
         need_fixing = False
         for capsule in self.capsules.values():
             is_valid, actions = capsule.apply_constraints(self.global_constraints)
-            print(is_valid, actions)
             if not is_valid:
                 need_fixing = True
                 for action in actions:
-                    print(action)
                     self.commit_action(action)
         return need_fixing
     
