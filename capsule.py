@@ -33,19 +33,19 @@ class Capsule:
         return True, []
 
 class CapsulesManager:
-    max_tries_count = 20
-    max_fixes_count = 2000
-
-    def __init__(self, rooms, capsules_count, global_constraints, existing_room_mapping=None):
+    def __init__(self, rooms, capsules_count, global_constraints, config_json, existing_room_mapping=None):
         self.global_constraints = global_constraints
+
+        self.max_tries_count = config_json['max_tries_count']
+        self.max_fixes_count = config_json['max_fixes_count']
 
         self.rooms = rooms
         self.room_mapping = {room: None for room in self.rooms.values()}
 
         self.capsules_count = capsules_count
 
-        for try_count in range(CapsulesManager.max_tries_count):
-            logger.info(f'\nStart building capsules, attempt {try_count+1}/{CapsulesManager.max_tries_count}')
+        for try_count in range(self.max_tries_count):
+            logger.info(f'\nStart building capsules, attempt {try_count+1}/{self.max_tries_count}')
             succeded = self.build_capsules(existing_room_mapping)
             if succeded:
                 return
@@ -101,8 +101,8 @@ class CapsulesManager:
             current_capsule.update(self.room_mapping)
             self.capsules[current_capsule_index] = current_capsule
             
-        for fix_count in range(CapsulesManager.max_fixes_count):
-            logger.info(f'Attempting to fix capsules, ({fix_count+1}/{CapsulesManager.max_fixes_count})')
+        for fix_count in range(self.max_fixes_count):
+            logger.info(f'Attempting to fix capsules ({fix_count+1}/{self.max_fixes_count})')
             needed_fixing = self.fix_capsules()
             if not needed_fixing:
                 return True
@@ -147,6 +147,3 @@ class CapsulesManager:
         capsules = [[room.index for room in capsule.rooms] for capsule in self.capsules.values()]
         capsules.sort(key=lambda x:len(x) and x[0])
         return capsules
-
-    def print_room_mapping(self):
-        print({room.index: capsule for room, capsule in self.room_mapping.items()})

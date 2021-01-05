@@ -19,6 +19,9 @@ class Gender(Enum):
 
 def build_rooms(roomates_dict: dict, gender_dict: dict, assume_gender):
     """
+    Build room objects, including roomates count and room's gender
+    Notice: Does not add constraints.
+
     :roomates_dict maps room_index to roomates_names, i.e.
     {
         1: ['Johnny', 'Papi'],
