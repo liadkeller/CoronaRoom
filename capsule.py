@@ -11,19 +11,35 @@ class Capsule:
         self._update_constraints()
     
     def update(self, room_mapping):
+        """
+        Updates the capsule rooms according to the given room mapping
+        """
         self.rooms = [room for room, capsule_index in room_mapping.items()
                            if self.index == capsule_index]
         self._update_constraints()
     
     def _update_constraints(self):
+        """
+        Updates the capsule constraints according to the capsule rooms
+        """
         self.constraints = [c for room in self.rooms
                               for c in room.constraints]
 
     def apply_constraints(self, global_constraints):
+        """
+        Check if the capsule sustains the applied constraints
+        The constraints are all of the capsule rooms constraints
+        and any global constraints that are provided as argument.
+        """
         self.constraints += global_constraints
         return self._is_valid()
     
     def _is_valid(self):
+        """
+        Check each of the capsule constraints
+        Return an (is_valid, state) tuple where `is_valid` is a boolean
+        and `state` is a list of actions that can be done to meet the constraint
+        """
         ordered_constraints = sorted(self.constraints, key=lambda c: c.order)
         for constraint in ordered_constraints:
             valid, state = constraint.is_valid(self.index, self.rooms)
@@ -33,7 +49,16 @@ class Capsule:
         return True, []
 
 class CapsulesManager:
+    """
+    This class represents the process of finding a single combination of valid capsules.
+    """
     def __init__(self, rooms, capsules_count, global_constraints, config_json, existing_room_mapping=None):
+        """
+        Builds an instance of CapsulesManager object and tries to create a valid combination of capsules
+        Tries a limited amount of tries according to config_json parameters
+        Each try starts with a random room mapping and the manager tries to commit a limited amount of fixes to reach a valid combination
+        """
+        self.capsules_count = capsules_count
         self.global_constraints = global_constraints
 
         self.max_tries_count = config_json['max_tries_count']
@@ -41,8 +66,6 @@ class CapsulesManager:
 
         self.rooms = rooms
         self.room_mapping = {room: None for room in self.rooms.values()}
-
-        self.capsules_count = capsules_count
 
         for try_count in range(self.max_tries_count):
             logger.info(f'\nStart building capsules, attempt {try_count+1}/{self.max_tries_count}')
@@ -52,9 +75,6 @@ class CapsulesManager:
         
         raise RuntimeError("Reached maximum try attempts")
 
-    def randomize_room_mapping(self):
-        self.allocate_rooms_randomly(self.rooms.keys())
-    
     def allocate_rooms_randomly(self, room_indices):
         """
         Randomly allocates the given rooms to capsules
@@ -82,6 +102,13 @@ class CapsulesManager:
             room = self.rooms[room_index]
             self.room_mapping[room] = capsule_index
             logger.debug(f'Randomly allocating room {room.index} to capsule {capsule_index}')
+
+    def randomize_room_mapping(self):
+        """
+        Randomize new room mapping.
+        Allocate all rooms to new capsules.
+        """
+        self.allocate_rooms_randomly(self.rooms.keys())
 
     def build_capsules(self, existing_room_mapping=None):
         """
@@ -111,10 +138,10 @@ class CapsulesManager:
             return False
   
     def fix_capsules(self):
-        '''
+        """
         Apply global constaints and try to fix invalid capsules
         Return boolean if needed fixing
-        '''
+        """
         need_fixing = False
         for capsule in shuffle_list(self.capsules.values()):
             logger.debug(self.get_capsules())
@@ -134,8 +161,7 @@ class CapsulesManager:
         return need_fixing
     
     def commit_action(self, action):
-        # The action only influence room_mapping,
-        # therefore we must update the capsules
+        # The action only influence room_mapping so we must update the capsules
         action.do(self.room_mapping)
         self.update_capsules()
     

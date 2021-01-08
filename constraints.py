@@ -38,6 +38,8 @@ class RoomCountConstraint(Constraint):
     
     @property
     def order(self):
+        # These magic numbers are used so if k <= 3, the constraint will preceed other constraints with `order = 10`
+        # and for larger max_room_count values, other constraints will preceed.
         return (self.max_room_count - 2) * 8
 
     def is_valid(self, capsule_index, rooms):

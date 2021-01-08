@@ -66,7 +66,7 @@ def main(data):
 
 if __name__ == "__main__":
     logging.basicConfig()
-    #logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.NOTSET)
 
     data = read_json_file('data.json')
     main(data)
